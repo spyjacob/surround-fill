@@ -6,8 +6,12 @@ Stereo audio like YouTube often plays only from the soundbar, and the surround s
 
 ## Setup
 
+**Easy way:** download this repo, right-click `Setup.ps1` and choose **Run with PowerShell**. It walks you through everything below.
+
+**Manual way:**
+
 1. Install [Equalizer APO](https://sourceforge.net/projects/equalizerapo/). In its Device Selector, tick your soundbar under Playback devices, then restart your PC.
-2. In Windows Sound settings, set your soundbar's speaker setup to **7.1**.
+2. In Windows Sound settings, set your soundbar's speaker setup to **5.1** or **7.1**.
 3. Add these two lines to the end of `C:\Program Files\EqualizerAPO\config\config.txt`, using your soundbar's name as it appears in Sound settings:
    ```
    Device: Your Soundbar Name
