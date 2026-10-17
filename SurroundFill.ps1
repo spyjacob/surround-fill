@@ -6,6 +6,7 @@ $created = $false
 $mutex = New-Object Threading.Mutex($true, 'Local\SurroundFill', [ref]$created)
 if (-not $created) { return }
 
+$rearGain = 1.0   # surround level relative to the fronts
 $fillFile = Join-Path (Get-ItemProperty HKLM:\SOFTWARE\EqualizerAPO).ConfigPath 'surround-fill.txt'
 $iconOn  = New-Object Drawing.Icon (Join-Path $PSScriptRoot 'surround-on.ico')
 $iconOff = New-Object Drawing.Icon (Join-Path $PSScriptRoot 'surround-off.ico')
@@ -13,8 +14,11 @@ $iconOff = New-Object Drawing.Icon (Join-Path $PSScriptRoot 'surround-off.ico')
 function Get-Fill { (Test-Path $fillFile) -and ([string](Get-Content $fillFile -Raw) -match 'Copy:') }
 
 function Set-Fill([bool]$on) {
-    # -3.5 dB offsets the added rears + center so overall loudness doesn't change
-    $lines = if ($on) { 'Copy: RL=RL+L RR=RR+R C=C+0.5*L+0.5*R', 'Preamp: -3.5 dB' } else { '# off' }
+    # Preamp offsets the added rears so overall loudness doesn't change
+    $inv = [Globalization.CultureInfo]::InvariantCulture
+    $preamp = (10 * [Math]::Log10(2 / (2 + 2 * $rearGain * $rearGain))).ToString('0.0', $inv)
+    $g = $rearGain.ToString($inv)
+    $lines = if ($on) { "Copy: SL=SL+$g*L SR=SR+$g*R", "Preamp: $preamp dB" } else { '# off' }
     Set-Content $fillFile $lines -Encoding ASCII
 }
 
