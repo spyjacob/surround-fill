@@ -41,19 +41,30 @@ if ($dev.Channels -lt 6) {
     Read-Host 'Press Enter when done' | Out-Null
 }
 
-# 4. Attach Equalizer APO to the soundbar
-if (-not (Test-Path "$apoKey\Child APOs\$($dev.Id)")) {
+# 4. Point the fill at the soundbar
+$config = Join-Path $configDir 'config.txt'
+if (-not (Select-String -Path $config -Pattern 'surround-fill\.txt' -Quiet)) {
+    Add-Content $config "`r`nDevice: $($dev.Name)`r`nInclude: surround-fill.txt"
+}
+
+# 5. Keep Equalizer APO attached when Windows replaces the soundbar device (driver updates, some restarts).
+#    If that already happened, this re-attaches it now.
+& "$PSScriptRoot\KeepAttached.ps1" -Install
+
+# 6. Attach Equalizer APO to the soundbar
+function Test-Apo($id) {
+    $k = Get-Item "$render\$id\FxProperties" -ErrorAction SilentlyContinue
+    $k -and (1, 2, 5, 6, 7 | Where-Object { $k.GetValue("{d04e05a6-594b-4fb6-a80d-01af5eed7d1d},$_") -in
+        '{EACD2258-FCAC-4FF4-B36D-419E924A6D79}', '{EC1CC9CE-FAED-4822-828A-82A81A6F018F}' })
+}
+if (-not (Test-Apo $dev.Id)) {
     Step '4. Attach Equalizer APO'
     Write-Host "Device Selector will open. Tick '$($dev.Name)' under Playback devices, click OK, then close it."
     Start-Process (Join-Path $apo 'DeviceSelector.exe') -Wait
     $needsRestart = $true
 }
 
-# 5. Config + shortcuts
-$config = Join-Path $configDir 'config.txt'
-if (-not (Select-String -Path $config -Pattern 'surround-fill\.txt' -Quiet)) {
-    Add-Content $config "`r`nDevice: $($dev.Name)`r`nInclude: surround-fill.txt"
-}
+# 7. Shortcuts
 $shell = New-Object -ComObject WScript.Shell
 $targets = @([Environment]::GetFolderPath('Desktop'), [Environment]::GetFolderPath('Programs'))
 if ((Read-Host "`nStart Surround Fill with Windows? (y/n)") -eq 'y') { $targets += [Environment]::GetFolderPath('Startup') }
